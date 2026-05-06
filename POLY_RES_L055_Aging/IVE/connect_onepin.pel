@@ -1,0 +1,67 @@
+UPDATE_EXPLICIT
+!-- [connect_onepin]
+
+GLOBAL_VAR  Debug           !ModelVariable, WaferPro Debug Level
+GLOBAL_VAR  Mode            !ModelVariable, WaferPro Test Plan Mode
+GLOBAL_VAR  bRet            !Setup/ModelVariable, WaferPro Success(=1)/Nonsuccess(=0) Flag
+GLOBAL_VAR  ErrorMsg        !Setup/ModelVariable, Error Message sent to WaferPro when Nonsuccess
+
+GLOBAL_VAR  Unit            !SetupVariable
+GLOBAL_VAR  Pin             !SetupVariable
+
+GLOBAL_VAR  hpib_interface  !SetupVariable
+GLOBAL_VAR  hpib_addr       !SetupVariable
+GLOBAL_VAR  hpib_suffix     !SetupVariable
+GLOBAL_VAR  hpib_cmd        !SetupVariable
+GLOBAL_VAR  pins_count      !SetupVariable
+
+IF Debug >= 1 THEN PRINT ">>> exec. Xfm '" & whoami() & "' ..."
+
+bRet = 1
+ErrorMsg = ""
+!------------
+
+GET_STRING "Unit Col", "6",  Unit
+GET_STRING "Pin",      "27", Pin
+! ---- Format unit
+UnitCol = VAL$(VAL(Unit),"%02.0f")
+Card=0
+! ---- Format pin
+Pin  = VAL(Pin)
+
+IF Pin < 13 THEN
+  Card =1 
+  PinInCard = Pin
+ENDIF
+
+IF Pin > 12 AND Pin < 25 THEN
+  Card =2 
+  PinInCard = Pin-12
+ENDIF
+
+IF Pin > 24 AND Pin < 37 THEN
+  Card =3 
+  PinInCard = Pin-24
+ENDIF
+
+IF Pin > 36 AND Pin < 49 THEN
+  Card =4 
+  PinInCard = Pin-36
+ENDIF
+
+PinLine = VAL$(PinInCard,"%02.0f")
+
+hpib_cmd = ":ROUT:CLOS (@" & VAL$(Card) & UnitCol &  VAL$(PinInCard,"%02.0f") &")"
+!hpib_cmd = ":ROUT:CLOS (@" & VAL$(Card) & UnitCol &  VAL$(Pin,"%02.0f") &")"
+
+
+! ---- Send GPIB Command
+ICCAP_FUNC("/Driver/Utilities/gpib/send_gpib_cmd","Execute",VAL$(hpib_interface), VAL$(hpib_addr), VAL$(hpib_suffix), VAL$(hpib_cmd),"1","", "", "")
+IF /Driver/Utilities/gpib/send_gpib_cmd[0] == 0 THEN
+  bRet = 0
+ENDIF
+
+dummy = WAIT(0.2)
+
+
+RETURN_VALUE bRet

@@ -1,0 +1,36 @@
+UPDATE_EXPLICIT
+!-- [disconnect_all]
+
+GLOBAL_VAR  Debug           !ModelVariable, WaferPro Debug Level
+GLOBAL_VAR  Mode            !ModelVariable, WaferPro Test Plan Mode
+GLOBAL_VAR  bRet            !Setup/ModelVariable, WaferPro Success(=1)/Nonsuccess(=0) Flag
+GLOBAL_VAR  ErrorMsg        !Setup/ModelVariable, Error Message sent to WaferPro when Nonsuccess
+
+GLOBAL_VAR  hpib_interface  !SetupVariable
+GLOBAL_VAR  hpib_addr       !SetupVariable
+GLOBAL_VAR  hpib_suffix     !SetupVariable
+GLOBAL_VAR  hpib_cmd        !SetupVariable
+
+IF Debug >= 1 THEN PRINT ">>> exec. Xfm '" & whoami() & "' ..."
+
+bRet = 1
+ErrorMsg = ""
+!------------
+
+hpib_cmd   = ":ROUT:OPEN:CARD ALL"
+
+ICCAP_FUNC("/Driver/Utilities/gpib/send_gpib_cmd","Execute",VAL$(hpib_interface), VAL$(hpib_addr), VAL$(hpib_suffix), VAL$(hpib_cmd),"1","", "", "")   
+IF /Driver/Utilities/gpib/send_gpib_cmd[0] == 0 THEN
+  bRet = 0
+ENDIF
+ErrorMsg = VAL$(/Driver/Utilities/gpib/ErrorMsg)
+IF bRet == 0 THEN RETURN_VALUE bRet
+
+
+bRet = 1
+ErrorMsg = ""
+
+dummy = WAIT(0.2)
+
+
+RETURN_VALUE bRet

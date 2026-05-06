@@ -1,0 +1,36 @@
+UPDATE_EXPLICIT
+!-- [Init]
+
+GLOBAL_VAR  hpib_interface  !SetupVariable, gpib interface
+GLOBAL_VAR  hpib_addr       !SetupVariable, matrix gpib address
+GLOBAL_VAR  PinVJHI            !SetupVariable, matrix pin
+GLOBAL_VAR  PinVJLI            !SetupVariable, matrix pin
+GLOBAL_VAR  PinVJHV            !SetupVariable, matrix pin
+GLOBAL_VAR  PinVJLV            !SetupVariable, matrix pin
+GLOBAL_VAR  PinVnwell           !SetupVariable, matrix pin
+GLOBAL_VAR  PinVpsub            !SetupVariable, matrix pin
+GLOBAL_VAR  PinVpwell           !SetupVariable, matrix pin
+!GLOBAL_VAR  PinVbody           !SetupVariable, matrix pin
+
+!--- get info from WaferPro
+dummy = WPro_lookup_info("Hardware", "Matrix[Controller]", "hpib_interface")
+dummy = WPro_lookup_info("Hardware", "Matrix[Address]",    "hpib_addr")
+dummy = WPro_lookup_info("Hardware", "PIN[VJHI]", "PinVJHI")
+dummy = WPro_lookup_info("Hardware", "PIN[VJLI]", "PinVJLI")
+dummy = WPro_lookup_info("Hardware", "PIN[VJHV]", "PinVJHV")
+dummy = WPro_lookup_info("Hardware", "PIN[VJLV]", "PinVJLV")
+dummy = WPro_lookup_info("Hardware", "PIN[Vnwell]", "PinVnwell")
+dummy = WPro_lookup_info("Hardware", "PIN[Vpsub]", "PinVpsub")
+dummy = WPro_lookup_info("Hardware", "PIN[Vpwell]", "PinVpwell")
+!dummy = WPro_lookup_info("Hardware", "PIN[Vbody]", "PinVbody")
+
+print "Routine GET_PIN Interface and Addr:",hpib_interface, hpib_addr
+print "Pins:"
+print " VJHI:",PinVJHI
+print " VJLI:",PinVJLI
+print " VJHV:",PinVJHV
+print " VJLV:",PinVJLV
+print " Vnwell:",PinVnwell
+print " Vpwell:",PinVpwell
+print " Vpsub:",PinVpsub
+!print " Vbody:",PinVbody

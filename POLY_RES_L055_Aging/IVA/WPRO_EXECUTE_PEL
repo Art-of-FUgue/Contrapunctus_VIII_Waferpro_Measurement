@@ -1,0 +1,60 @@
+UPDATE_EXPLICIT
+!-- [WPRO_EXECUTE]
+
+
+IF Debug >= 1 THEN PRINT ">>> exec. Xfm '" & whoami() & "' ..."
+!---------------------------------------------------------------------
+! RETURN_VALUE 1 : for success
+! RETURN_VALUE 0 : for fail/error
+!---------------------------------
+
+!--- Initialize Variables
+bRet = 1
+ErrorMsg = ""
+
+!--- Define local variables for this Program
+Path2Setup  = WHOIS(".", "Parent Setup")
+RoutineName = WHOIS(".", "Parent DUT PartName")
+SetupName   = WHOIS(".", "Parent Setup PartName")
+
+
+!--- Clear data
+ICCAP_FUNC(".", "Clear Data/Both")
+
+!===== Action *Execute* =====
+IF VAL$(Mode)=="Measure" THEN
+  ICCAP_FUNC("matrix_init","Execute")
+  ICCAP_FUNC("connect_measure_a","Execute")
+  ICCAP_FUNC(".", "Measure")
+  ICCAP_FUNC("disconnect","Execute")
+  !
+ELSE IF VAL$(Mode)=="Simulation" THEN
+  dummy = WPro_SimulData(VAL$(RoutineName), VAL$(SetupName))
+  !
+ELSE IF VAL$(Mode)=="Load From Record" THEN
+  dummy = WPro_lookup_info("Run", "LoadMdm", "FileName")
+  ICCAP_FUNC(VAL$(Path2Setup), "Import Data", VAL$(FileName))
+  !
+END IF
+
+
+!--- ET data calculations
+dummy = WPro_SaveDataRoutine(VAL$(Path2Setup))
+iccap_func("export_mea_a", "Execute")
+
+!--- Pass/Fail
+
+
+!--- Plot contents control
+!ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 0","id.m*Type!!id")
+!ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 1","ig.m*Type!!ig")
+!ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 2","-is.m*Type!!is")
+!ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 3","ib.m*Type!!ib")
+!IF LOOKUP_TABLE_VAL("id", "Unit", ErrorMsg) == "GND" THEN ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 0","!id.m*Type!!id")
+!IF LOOKUP_TABLE_VAL("ig", "Unit", ErrorMsg) == "GND" THEN ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 1","!ig.m*Type!!ig")
+!IF LOOKUP_TABLE_VAL("is", "Unit", ErrorMsg) == "GND" THEN ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 2","!-is.m*Type!!is")
+!IF LOOKUP_TABLE_VAL("ib", "Unit", ErrorMsg) == "GND" THEN ICCAP_FUNC("ix_vg","SetTableFieldValue","Y Data 3","!ib.m*Type!!ib")
+
+
+!-------------------------
+RETURN_VALUE 1

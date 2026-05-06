@@ -1,0 +1,66 @@
+UPDATE_EXPLICIT
+!-- [connect]
+
+GLOBAL_VAR  Debug           !ModelVariable, WaferPro Debug Level
+GLOBAL_VAR  Mode            !ModelVariable, WaferPro Test Plan Mode
+GLOBAL_VAR  bRet            !Setup/ModelVariable, WaferPro Success(=1)/Nonsuccess(=0) Flag
+GLOBAL_VAR  ErrorMsg        !Setup/ModelVariable, Error Message sent to WaferPro when Nonsuccess
+
+GLOBAL_VAR  Unit            !SetupVariable
+GLOBAL_VAR  Pin             !SetupVariable
+
+GLOBAL_VAR  hpib_interface  !SetupVariable
+GLOBAL_VAR  hpib_addr       !SetupVariable
+GLOBAL_VAR  hpib_suffix     !SetupVariable
+GLOBAL_VAR  hpib_cmd        !SetupVariable
+GLOBAL_VAR  ground_col      !SetupVariable
+GLOBAL_VAR  pins_count      !SetupVariable
+GLOBAL_VAR  PinTab          !SetupVariable
+
+
+IF Debug>0 THEN PRINT ">>> executing Xfm " & whoami() & " ..."
+
+bRet = 1
+ErrorMsg = ""
+
+! ---- Get pin assignment for nodes from setup
+ICCAP_FUNC("get_pin_measure_a", "Execute")
+
+! --- Setup assumes fixed node to SMU/Pin configurations:
+! VAHI --> SMU1 Force --> Port1
+! VAHV --> SMU1 Sense --> Port2
+! VALI --> SMU2 Force --> Port3
+! VALV --> SMU2 Sense --> Port4
+! Vnwell --> SMU3 --> Port 5
+! Vpwell --> SMU4 --> Port 6
+! Vpsub --> SMU5 -->Port 7
+! Vbody --> SMU6 --> Port 8
+
+! VDF pin connection (port 1)
+ICCAP_FUNC("connect_onepin","Execute",1,PinVAHI)
+
+! VDS pin connection (port 2)
+ICCAP_FUNC("connect_onepin","Execute",2,PinVAHV)
+
+
+! VSF pin connection (port 3)
+ICCAP_FUNC("connect_onepin","Execute",3,PinVALI)
+
+! VSS pin connection (port 4)
+ICCAP_FUNC("connect_onepin","Execute",4,PinVALV)
+
+! VSS pin connection (port 5)
+ICCAP_FUNC("connect_onepin","Execute",5,PinVnwell)
+
+! Vsub pin connection (port 6)
+ICCAP_FUNC("connect_onepin","Execute",6,PinVpwell)
+
+! Vgate pin connection (port 7)
+ICCAP_FUNC("connect_onepin","Execute",7,PinVpsub)
+
+!! Vbody pin connection (port 8)
+!ICCAP_FUNC("connect_onepin","Execute",8,PinVbody)
+
+dummy = WAIT(0.2)
+
+RETURN bRet
