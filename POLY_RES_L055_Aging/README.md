@@ -1,0 +1,81 @@
+# Poly-Resistor Aging Automation (ACJ Version)
+
+## Overview
+The `runPolyAging_ACJ.py` script is a specialized IC-CAP automation tool designed to perform reliability (aging) tests on poly-silicon resistors. Unlike standard aging scripts that target a single device, this version (ACJ) is engineered to manage characterization for up to 10 individual resistors (labeled A through J) in a single execution flow.
+
+## Folder Logic and Hierarchy
+
+The script interacts with the IC-CAP model hierarchy using a specific naming convention:
+
+### 1. Characterization Setups (`IVA` to `IVJ`)
+*   **Purpose**: These folders contain the measurement setups for each individual resistor on the wafer.
+*   **Logic**: The script uses suffixes `['a', 'b', ..., 'j']` to dynamically address these folders.
+*   **Conditionality**: Execution for a specific folder is controlled by IC-CAP variables `bool_a` through `bool_j`. If the variable is set to `"1"`, that device is included in the test.
+*   **Encapsulation**: Each folder is expected to contain:
+    *   An `ih` Input (Current Sweep) and a `v` Output (Voltage Measurement).
+    *   Macros: `connect_measure_{suffix}` and `export_mea_{suffix}`.
+
+### 2. Stress Setup (`stress_ACJ`)
+*   **Purpose**: A centralized setup used to apply the electrical stress to the devices.
+*   **Logic**: Instead of repeating stress configurations for each device, the script uses this single setup to define the stress interval. 
+*   **Shared Resources**: It assumes the switch matrix and stress conditions are managed here to affect the devices designated for the aging run.
+
+## Comparison: `runPolyAging_ACJ` vs. Standard `runPolyAging`
+
+| Feature | Standard `runPolyAging` | `runPolyAging_ACJ` (This Script) |
+| :--- | :--- | :--- |
+| **DUT Capacity** | Single Device | Up to 10 Devices (A-J) |
+| **Parameterization** | Static W/L | Dynamic W/L lookup for each suffix |
+| **Execution** | Linear Stress -> Measure | Nested Loop: Stress -> Measure(A) -> ... -> Measure(J) |
+| **Data Extraction** | Single Resistance Point | Dual-point Resistance Tracking ($R_1$ at index -2, $R_2$ at index 51) |
+| **File Management** | Fixed naming or timestamp | Unique 6-character Hex Key prefix to prevent data collisions |
+
+## Stress Application Workflow
+
+The script follows a "Stress-Measure" loop based on the values provided in `Stress_Time_List`.
+
+### Phase 1: Initialization & Baseline (0s)
+1.  **Identify Active DUTs**: Checks `bool_a` through `bool_j` to build the list of resistors to test.
+2.  **Calculate Monitor Currents**: Fetches $W$ and $L$ for each active device and calculates the target `I_monitor` based on the provided current density.
+3.  **Generate Session Key**: Creates a unique hex key (e.g., `a1b2c3`) for file naming.
+4.  **Initial Characterization**: 
+    *   Iterates through active suffixes.
+    *   Configures the `ih` sweep limits in the corresponding `IV*` folder.
+    *   Measures the IV curve and calculates initial resistance.
+
+### Phase 2: The Aging Loop
+For every time point defined in the `Stress_Time_List`:
+
+1.  **Configure Stress Interval**:
+    *   Calculates the delta time between the current and previous stress steps.
+    *   Updates the `Stop` and `Step Size` in `../stress_ACJ/time`.
+2.  **Apply Stress**:
+    *   Executes `connect_stress` via the matrix.
+    *   Runs the `Measure` command on the `stress_ACJ` setup.
+    *   Exports stress data and disconnects.
+3.  **Intermediate Characterization**:
+    *   Loops through all active `IVA-IVJ` folders.
+    *   Updates the `ih` sweep settings dynamically.
+    *   Measures the post-stress IV curve.
+    *   Calculates $R_1$ and $R_2$ and stores them in memory dictionaries.
+    *   Exports individual `.mdm` files via `export_mea_{suffix}`.
+
+### Phase 3: Data Export and Visualization
+1.  **Plotting**: Generates $R$ vs. $Time$ plots for each active device, displaying both $R_1$ and $R_2$ trends.
+2.  **CSV Serialization**: 
+    *   Saves full Current (`full_I*.csv`), Voltage (`full_V*.csv`), and Resistance (`full_R*.csv`) dictionaries to the directory defined in `Mea_Data_Save_Dir`.
+    *   Data is organized by Lot, Wafer, Temperature, and Die index.
+
+## Key Variables
+*   `I_bias_density`: Current density used for stress.
+*   `s_factor`: Scaling factor for monitoring.
+*   `Stress_Time_List`: Comma-separated string of cumulative stress times (e.g., "10,100,1000").
+*   `Mea_Data_Save_Dir`: The root path for all output data and plots.
+
+## Technical Notes
+*   **Matrix Safety**: The script explicitly calls `disconnect` between characterization and stress phases to ensure pin integrity.
+*   **Resistance Calculation**: The script uses hardcoded indices (`[-2]` and `[51]`) from the IV sweep to calculate resistance. Ensure the `ih` sweep points are consistent with these indices.
+*   **Error Handling**: Uses `bRet` and `ErrorMsg` variables to communicate status back to the WaferPro environment.
+
+---
+*Generated by Gemini Code Assist*
